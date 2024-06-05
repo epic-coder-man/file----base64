@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File and Base64 Converter with Encryption</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .agree-disagree {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .agree-disagree button {
+            margin: 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .credits {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body onload="showTermsModal()">
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <h2>Terms of Service</h2>
+            <p>This service is provided for demonstration purposes only and is not intended for actual encryption. It may not provide the best security and is not fully complete.</p>
+            <p>By using this service, you acknowledge that:</p>
+            <ul>
+                <li>This service is not suitable for sensitive or confidential data.</li>
+                <li>There may be security vulnerabilities in the implementation.</li>
+                <li>The service may not work correctly in all scenarios.</li>
+                <li>If you use or modify the provided code for your own projects, you must credit the original author (Zeke Hinrichs) and include a notice in your project stating that the code is used under the terms of this license.</li>
+                <li>Failure to comply with the terms of this license may result in legal action, including but not limited to, the pursuit of damages and the takedown of infringing websites or applications.</li>
+            </ul>
+            <p>If you have any questions or concerns, please contact Zeke Hinrichs at zeeekhinricks7@gmail.com.</p>
+            <p>Use at your own risk.</p>
+            <div class="agree-disagree">
+                <button onclick="agree()">I Agree</button>
+                <button onclick="disagree()">I Disagree</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h1>File to Base64 Encoder with Encryption</h1>
+            <input type="file" id="fileInput"><br><br>
+            <button onclick="convertToBase64()">Convert to Base64</button><br><br>
+            <textarea id="base64Output" readonly placeholder="Base64 Output"></textarea><br><br>
+            <textarea id="encryptionKeyOutput" readonly placeholder="Encryption Key"></textarea>
+        </div>
+
+        <div class="section">
+            <h1>Base64 to File Decoder with Decryption</h1>
+            <textarea id="base64Input" placeholder="Paste Base64 string here"></textarea><br><br>
+            <textarea id="decryptionKeyInput" placeholder="Paste encryption key here"></textarea><br><br>
+            <input type="text" id="fileName" placeholder="Enter file name with extension"><br><br>
+            <button onclick="convertToFile()">Convert to File</button>
+        </div>
+    </div>
+
+    <div class="credits">
+        Created by Zeke Hinrichs
+    </div>
+
+    <script>
+        function agree() {
+            // Perform actions when user agrees
+            closeTermsModal();
+        }
+
+        function disagree() {
+            // Close the tab when user disagrees
+            window.close();
+        }
+
+        function showTermsModal() {
+            const modal = document.getElementById("termsModal");
+            modal.style.display = "block";
+        }
+
+        function closeTermsModal() {
+            const modal = document.getElementById("termsModal");
+            modal.style.display = "none";
+        }
+
+        function generateRandomKey(a) {
+            const b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            let c = "";
+            for (let d = 0; d < a; d++) {
+                const e = Math.floor(Math.random() * b.length);
+                c += b[e];
+            }
+            return c;
+        }
+
+        function convertToBase64() {
+            const a = document.getElementById("fileInput"),
+                b = document.getElementById("base64Output"),
+                c = document.getElementById("encryptionKeyOutput");
+            if (0 === a.files.length) return void alert("Please select a file first.");
+            const d = a.files[0],
+                e = new FileReader;
+            e.onload = function(a) {
+                const d = a.target.result.split(",")[1],
+                    e = generateRandomKey(16),
+                    f = CryptoJS.AES.encrypt(d, e).toString();
+                b.textContent = f, c.textContent = e
+            }, e.onerror = function(a) {
+                alert("Error reading file: " + a)
+            }, e.readAsDataURL(d)
+        }
+
+        function convertToFile() {
+            const a = document.getElementById("base64Input").value,
+                b = document.getElementById("decryptionKeyInput").value,
+                c = document.getElementById("fileName").value;
+            if (!a || !b || !c) return void alert("Please provide a Base64 string, decryption key, and file name.");
+            try {
+                const d = CryptoJS.AES.decrypt(a, b).toString(CryptoJS.enc.Utf8);
+                if (!d) throw new Error("Invalid decryption key or Base64 string");
+                const e = atob(d),
+                    f = new Array(e.length);
+                for (let a = 0; a < e.length; a++) f[a] = e.charCodeAt(a);
+                const g = new Uint8Array(f),
+                    h = new Blob([g]),
+                    i = document.createElement("a");
+                i.href = URL.createObjectURL(h), i.download = c, i.click()
+            } catch (a) {
+                alert("Error decrypting file: " + a.message)
+            }
+        }
+    </script>
+</body>
+</html>
